@@ -389,6 +389,7 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-para-variables-numericas">Analisis exploratorio para variables numericas</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos">Conclusiones del exploratorio de datos</a></li>
 </ul>
 </li>
 </ul>
@@ -437,6 +438,30 @@ document.write(`
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Encabezado:&quot;</span><span class="p">)</span>
     <span class="n">display</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analizar_categoricas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">resultados</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c1"># Detectar variables categóricas (object, category o booleanas)</span>
+    <span class="n">categoricas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;bool&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+    
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categoricas</span><span class="p">:</span>
+        <span class="c1"># Conteo por categoría</span>
+        <span class="n">conteo</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">proporcion</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="n">resultados</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;cantidad_categorias&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;conteo&quot;</span><span class="p">:</span> <span class="n">conteo</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s2">&quot;proporcion&quot;</span><span class="p">:</span> <span class="n">proporcion</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span>
+    
+    <span class="k">return</span> <span class="n">resultados</span>
 </pre></div>
 </div>
 </div>
@@ -494,53 +519,6 @@ document.write(`
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">graficar_categorica</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Genera un gráfico de barras o de pastel para una variable categórica.</span>
-<span class="sd">    </span>
-<span class="sd">    Parámetros:</span>
-<span class="sd">    -----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame que contiene los datos.</span>
-<span class="sd">    columna : str</span>
-<span class="sd">        Nombre de la columna categórica a graficar.</span>
-<span class="sd">    tipo : str</span>
-<span class="sd">        Tipo de gráfico: &quot;barra&quot; o &quot;pastel&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    
-    <span class="n">tipo</span> <span class="o">=</span> <span class="s2">&quot;barra&quot;</span>
-    <span class="k">if</span> <span class="n">columna</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;La columna &#39;</span><span class="si">{</span><span class="n">columna</span><span class="si">}</span><span class="s2">&#39; no existe en el DataFrame.&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Contar la frecuencia de cada categoría</span>
-    <span class="n">conteo</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">columna</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
-
-    <span class="c1"># Gráfico de barras</span>
-    <span class="k">if</span> <span class="n">tipo</span> <span class="o">==</span> <span class="s2">&quot;barra&quot;</span><span class="p">:</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
-        <span class="n">conteo</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;skyblue&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Frecuencia de </span><span class="si">{</span><span class="n">columna</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">columna</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Frecuencia&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-
-    <span class="c1"># Gráfico de pastel</span>
-    <span class="k">elif</span> <span class="n">tipo</span> <span class="o">==</span> <span class="s2">&quot;pastel&quot;</span><span class="p">:</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
-        <span class="n">conteo</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;pie&quot;</span><span class="p">,</span> <span class="n">autopct</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%1.1f%%</span><span class="s1">&#39;</span><span class="p">,</span> 
-                    <span class="n">colors</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Set3</span><span class="o">.</span><span class="n">colors</span><span class="p">,</span> <span class="n">startangle</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Distribución de </span><span class="si">{</span><span class="n">columna</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># quitar etiqueta extra</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;El parámetro &#39;tipo&#39; debe ser &#39;barra&#39; o &#39;pastel&#39;.&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">resumen_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Devuelve un resumen estadístico de las variables numéricas en el DataFrame.</span>
@@ -568,6 +546,79 @@ document.write(`
     <span class="n">resumen</span><span class="p">[</span><span class="s2">&quot;mediana&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">numericas</span><span class="p">]</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
     
     <span class="k">return</span> <span class="n">resumen</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">graficar_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Detecta variables numéricas en el DataFrame y genera gráficos.</span>
+<span class="sd">    </span>
+<span class="sd">    Parámetros:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    df : pd.DataFrame</span>
+<span class="sd">        DataFrame con los datos.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Detectar variables numéricas</span>
+    <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numericas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No se detectaron variables numéricas en el DataFrame.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">numericas</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+
+        <span class="c1"># Histograma</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;skyblue&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Histograma de </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Frecuencia&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Boxplot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">vert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">boxprops</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;lightgreen&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">),</span>
+                    <span class="n">medianprops</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Boxplot de </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">contar_na_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cuenta la cantidad de valores NA en las variables numéricas del DataFrame.</span>
+<span class="sd">    </span>
+<span class="sd">    Parámetros:</span>
+<span class="sd">    -----------</span>
+<span class="sd">    df : pd.DataFrame</span>
+<span class="sd">        DataFrame con los datos.</span>
+<span class="sd">    </span>
+<span class="sd">    Retorna:</span>
+<span class="sd">    --------</span>
+<span class="sd">    pd.Series</span>
+<span class="sd">        Serie con el conteo de NA por variable numérica.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Detectar variables numéricas</span>
+    <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">numericas</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No se detectaron variables numéricas en el DataFrame.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Contar NAs en cada variable numérica</span>
+    <span class="n">na_counts</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">numericas</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">na_counts</span>
 </pre></div>
 </div>
 </div>
@@ -1436,12 +1487,255 @@ Resumen:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">16</span><span class="p">],</span> <span class="n">line</span> <span class="mi">1</span>
-<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">analizar_categoricas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-
-<span class="ne">NameError</span>: name &#39;analizar_categoricas&#39; is not defined
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;Workclass&#39;: {&#39;cantidad_categorias&#39;: 9,
+  &#39;conteo&#39;: {&#39; Private&#39;: 33906,
+   &#39; Self-emp-not-inc&#39;: 3862,
+   &#39; Local-gov&#39;: 3136,
+   nan: 2799,
+   &#39; State-gov&#39;: 1981,
+   &#39; Self-emp-inc&#39;: 1695,
+   &#39; Federal-gov&#39;: 1432,
+   &#39; Without-pay&#39;: 21,
+   &#39; Never-worked&#39;: 10},
+  &#39;proporcion&#39;: {&#39; Private&#39;: 0.6941976168052086,
+   &#39; Self-emp-not-inc&#39;: 0.07907129110192047,
+   &#39; Local-gov&#39;: 0.06420703492895459,
+   nan: 0.05730723557593874,
+   &#39; State-gov&#39;: 0.04055935465378158,
+   &#39; Self-emp-inc&#39;: 0.034703738585643504,
+   &#39; Federal-gov&#39;: 0.029319028704803244,
+   &#39; Without-pay&#39;: 0.0004299578231849638,
+   &#39; Never-worked&#39;: 0.00020474182056426845}},
+ &#39;Education&#39;: {&#39;cantidad_categorias&#39;: 16,
+  &#39;conteo&#39;: {&#39; HS-grad&#39;: 15784,
+   &#39; Some-college&#39;: 10878,
+   &#39; Bachelors&#39;: 8025,
+   &#39; Masters&#39;: 2657,
+   &#39; Assoc-voc&#39;: 2061,
+   &#39; 11th&#39;: 1812,
+   &#39; Assoc-acdm&#39;: 1601,
+   &#39; 10th&#39;: 1389,
+   &#39; 7th-8th&#39;: 955,
+   &#39; Prof-school&#39;: 834,
+   &#39; 9th&#39;: 756,
+   &#39; 12th&#39;: 657,
+   &#39; Doctorate&#39;: 594,
+   &#39; 5th-6th&#39;: 509,
+   &#39; 1st-4th&#39;: 247,
+   &#39; Preschool&#39;: 83},
+  &#39;proporcion&#39;: {&#39; HS-grad&#39;: 0.32316448957864136,
+   &#39; Some-college&#39;: 0.22271815240981122,
+   &#39; Bachelors&#39;: 0.16430531100282544,
+   &#39; Masters&#39;: 0.05439990172392613,
+   &#39; Assoc-voc&#39;: 0.04219728921829573,
+   &#39; 11th&#39;: 0.03709921788624544,
+   &#39; Assoc-acdm&#39;: 0.03277916547233938,
+   &#39; 10th&#39;: 0.02843863887637689,
+   &#39; 7th-8th&#39;: 0.01955284386388764,
+   &#39; Prof-school&#39;: 0.01707546783505999,
+   &#39; 9th&#39;: 0.015478481634658696,
+   &#39; 12th&#39;: 0.013451537611072437,
+   &#39; Doctorate&#39;: 0.012161664141517547,
+   &#39; 5th-6th&#39;: 0.010421358666721264,
+   &#39; 1st-4th&#39;: 0.0050571229679374306,
+   &#39; Preschool&#39;: 0.0016993571106834282}},
+ &#39;Education-num&#39;: {&#39;cantidad_categorias&#39;: 16,
+  &#39;conteo&#39;: {9: 15784,
+   10: 10878,
+   13: 8025,
+   14: 2657,
+   11: 2061,
+   7: 1812,
+   12: 1601,
+   6: 1389,
+   4: 955,
+   15: 834,
+   5: 756,
+   8: 657,
+   16: 594,
+   3: 509,
+   2: 247,
+   1: 83},
+  &#39;proporcion&#39;: {9: 0.32316448957864136,
+   10: 0.22271815240981122,
+   13: 0.16430531100282544,
+   14: 0.05439990172392613,
+   11: 0.04219728921829573,
+   7: 0.03709921788624544,
+   12: 0.03277916547233938,
+   6: 0.02843863887637689,
+   4: 0.01955284386388764,
+   15: 0.01707546783505999,
+   5: 0.015478481634658696,
+   8: 0.013451537611072437,
+   16: 0.012161664141517547,
+   3: 0.010421358666721264,
+   2: 0.0050571229679374306,
+   1: 0.0016993571106834282}},
+ &#39;Marital-status&#39;: {&#39;cantidad_categorias&#39;: 7,
+  &#39;conteo&#39;: {&#39; Married-civ-spouse&#39;: 22379,
+   &#39; Never-married&#39;: 16117,
+   &#39; Divorced&#39;: 6633,
+   &#39; Separated&#39;: 1530,
+   &#39; Widowed&#39;: 1518,
+   &#39; Married-spouse-absent&#39;: 628,
+   &#39; Married-AF-spouse&#39;: 37},
+  &#39;proporcion&#39;: {&#39; Married-civ-spouse&#39;: 0.45819172024077637,
+   &#39; Never-married&#39;: 0.32998239220343145,
+   &#39; Divorced&#39;: 0.13580524958027926,
+   &#39; Separated&#39;: 0.031325498546333076,
+   &#39; Widowed&#39;: 0.031079808361655952,
+   &#39; Married-spouse-absent&#39;: 0.012857786331436059,
+   &#39; Married-AF-spouse&#39;: 0.0007575447360877933}},
+ &#39;Occupation&#39;: {&#39;cantidad_categorias&#39;: 15,
+  &#39;conteo&#39;: {&#39; Prof-specialty&#39;: 6172,
+   &#39; Craft-repair&#39;: 6112,
+   &#39; Exec-managerial&#39;: 6086,
+   &#39; Adm-clerical&#39;: 5611,
+   &#39; Sales&#39;: 5504,
+   &#39; Other-service&#39;: 4923,
+   &#39; Machine-op-inspct&#39;: 3022,
+   nan: 2809,
+   &#39; Transport-moving&#39;: 2355,
+   &#39; Handlers-cleaners&#39;: 2072,
+   &#39; Farming-fishing&#39;: 1490,
+   &#39; Tech-support&#39;: 1446,
+   &#39; Protective-serv&#39;: 983,
+   &#39; Priv-house-serv&#39;: 242,
+   &#39; Armed-Forces&#39;: 15},
+  &#39;proporcion&#39;: {&#39; Prof-specialty&#39;: 0.1263666516522665,
+   &#39; Craft-repair&#39;: 0.12513820072888088,
+   &#39; Exec-managerial&#39;: 0.12460587199541379,
+   &#39; Adm-clerical&#39;: 0.11488063551861104,
+   &#39; Sales&#39;: 0.11268989803857336,
+   &#39; Other-service&#39;: 0.10079439826378936,
+   &#39; Machine-op-inspct&#39;: 0.06187297817452193,
+   nan: 0.05751197739650301,
+   &#39; Transport-moving&#39;: 0.04821669874288522,
+   &#39; Handlers-cleaners&#39;: 0.04242250522091642,
+   &#39; Farming-fishing&#39;: 0.030506531264076,
+   &#39; Tech-support&#39;: 0.029605667253593218,
+   &#39; Protective-serv&#39;: 0.02012612096146759,
+   &#39; Priv-house-serv&#39;: 0.004954752057655297,
+   &#39; Armed-Forces&#39;: 0.00030711273084640267}},
+ &#39;Relationship&#39;: {&#39;cantidad_categorias&#39;: 6,
+  &#39;conteo&#39;: {&#39; Husband&#39;: 19716,
+   &#39; Not-in-family&#39;: 12583,
+   &#39; Own-child&#39;: 7581,
+   &#39; Unmarried&#39;: 5125,
+   &#39; Wife&#39;: 2331,
+   &#39; Other-relative&#39;: 1506},
+  &#39;proporcion&#39;: {&#39; Husband&#39;: 0.4036689734245117,
+   &#39; Not-in-family&#39;: 0.257626632816019,
+   &#39; Own-child&#39;: 0.15521477416977192,
+   &#39; Unmarried&#39;: 0.10493018303918758,
+   &#39; Wife&#39;: 0.04772531837353098,
+   &#39; Other-relative&#39;: 0.030834118176978828}},
+ &#39;Race&#39;: {&#39;cantidad_categorias&#39;: 5,
+  &#39;conteo&#39;: {&#39; White&#39;: 41762,
+   &#39; Black&#39;: 4685,
+   &#39; Asian-Pac-Islander&#39;: 1519,
+   &#39; Amer-Indian-Eskimo&#39;: 470,
+   &#39; Other&#39;: 406},
+  &#39;proporcion&#39;: {&#39; White&#39;: 0.855042791040498,
+   &#39; Black&#39;: 0.09592154293435977,
+   &#39; Asian-Pac-Islander&#39;: 0.031100282543712377,
+   &#39; Amer-Indian-Eskimo&#39;: 0.009622865566520618,
+   &#39; Other&#39;: 0.0083125179149093}},
+ &#39;Sex&#39;: {&#39;cantidad_categorias&#39;: 2,
+  &#39;conteo&#39;: {&#39; Male&#39;: 32650, &#39; Female&#39;: 16192},
+  &#39;proporcion&#39;: {&#39; Male&#39;: 0.6684820441423365, &#39; Female&#39;: 0.33151795585766347}},
+ &#39;Native-country&#39;: {&#39;cantidad_categorias&#39;: 42,
+  &#39;conteo&#39;: {&#39; United-States&#39;: 43832,
+   &#39; Mexico&#39;: 951,
+   nan: 857,
+   &#39; Philippines&#39;: 295,
+   &#39; Germany&#39;: 206,
+   &#39; Puerto-Rico&#39;: 184,
+   &#39; Canada&#39;: 182,
+   &#39; El-Salvador&#39;: 155,
+   &#39; India&#39;: 151,
+   &#39; Cuba&#39;: 138,
+   &#39; England&#39;: 127,
+   &#39; China&#39;: 122,
+   &#39; South&#39;: 115,
+   &#39; Jamaica&#39;: 106,
+   &#39; Italy&#39;: 105,
+   &#39; Dominican-Republic&#39;: 103,
+   &#39; Japan&#39;: 92,
+   &#39; Guatemala&#39;: 88,
+   &#39; Poland&#39;: 87,
+   &#39; Vietnam&#39;: 86,
+   &#39; Columbia&#39;: 85,
+   &#39; Haiti&#39;: 75,
+   &#39; Portugal&#39;: 67,
+   &#39; Taiwan&#39;: 65,
+   &#39; Iran&#39;: 59,
+   &#39; Greece&#39;: 49,
+   &#39; Nicaragua&#39;: 49,
+   &#39; Peru&#39;: 46,
+   &#39; Ecuador&#39;: 45,
+   &#39; France&#39;: 38,
+   &#39; Ireland&#39;: 37,
+   &#39; Hong&#39;: 30,
+   &#39; Thailand&#39;: 30,
+   &#39; Cambodia&#39;: 28,
+   &#39; Trinadad&amp;Tobago&#39;: 27,
+   &#39; Outlying-US(Guam-USVI-etc)&#39;: 23,
+   &#39; Yugoslavia&#39;: 23,
+   &#39; Laos&#39;: 23,
+   &#39; Scotland&#39;: 21,
+   &#39; Honduras&#39;: 20,
+   &#39; Hungary&#39;: 19,
+   &#39; Holand-Netherlands&#39;: 1},
+  &#39;proporcion&#39;: {&#39; United-States&#39;: 0.8974243478973015,
+   &#39; Mexico&#39;: 0.019470947135661932,
+   nan: 0.017546374022357807,
+   &#39; Philippines&#39;: 0.006039883706645919,
+   &#39; Germany&#39;: 0.00421768150362393,
+   &#39; Puerto-Rico&#39;: 0.0037672494983825395,
+   &#39; Canada&#39;: 0.003726301134269686,
+   &#39; El-Salvador&#39;: 0.0031734982187461612,
+   &#39; India&#39;: 0.0030916014905204535,
+   &#39; Cuba&#39;: 0.002825437123786905,
+   &#39; England&#39;: 0.0026002211211662092,
+   &#39; China&#39;: 0.002497850210884075,
+   &#39; South&#39;: 0.0023545309364890873,
+   &#39; Jamaica&#39;: 0.0021702632979812455,
+   &#39; Italy&#39;: 0.002149789115924819,
+   &#39; Dominican-Republic&#39;: 0.002108840751811965,
+   &#39; Japan&#39;: 0.0018836247491912698,
+   &#39; Guatemala&#39;: 0.0018017280209655625,
+   &#39; Poland&#39;: 0.0017812538389091355,
+   &#39; Vietnam&#39;: 0.0017607796568527088,
+   &#39; Columbia&#39;: 0.0017403054747962819,
+   &#39; Haiti&#39;: 0.0015355636542320134,
+   &#39; Portugal&#39;: 0.0013717701977805986,
+   &#39; Taiwan&#39;: 0.001330821833667745,
+   &#39; Iran&#39;: 0.001207976741329184,
+   &#39; Greece&#39;: 0.0010032349207649155,
+   &#39; Nicaragua&#39;: 0.0010032349207649155,
+   &#39; Peru&#39;: 0.0009418123745956349,
+   &#39; Ecuador&#39;: 0.0009213381925392081,
+   &#39; France&#39;: 0.0007780189181442202,
+   &#39; Ireland&#39;: 0.0007575447360877933,
+   &#39; Hong&#39;: 0.0006142254616928053,
+   &#39; Thailand&#39;: 0.0006142254616928053,
+   &#39; Cambodia&#39;: 0.0005732770975799517,
+   &#39; Trinadad&amp;Tobago&#39;: 0.0005528029155235249,
+   &#39; Outlying-US(Guam-USVI-etc)&#39;: 0.00047090618729781744,
+   &#39; Yugoslavia&#39;: 0.00047090618729781744,
+   &#39; Laos&#39;: 0.00047090618729781744,
+   &#39; Scotland&#39;: 0.0004299578231849638,
+   &#39; Honduras&#39;: 0.0004094836411285369,
+   &#39; Hungary&#39;: 0.0003890094590721101,
+   &#39; Holand-Netherlands&#39;: 2.0474182056426847e-05}},
+ &#39;Income&#39;: {&#39;cantidad_categorias&#39;: 4,
+  &#39;conteo&#39;: {&#39; &lt;=50K&#39;: 24720, &#39; &lt;=50K.&#39;: 12435, &#39; &gt;50K&#39;: 7841, &#39; &gt;50K.&#39;: 3846},
+  &#39;proporcion&#39;: {&#39; &lt;=50K&#39;: 0.5061217804348717,
+   &#39; &lt;=50K.&#39;: 0.25459645387166785,
+   &#39; &gt;50K&#39;: 0.16053806150444289,
+   &#39; &gt;50K.&#39;: 0.07874370418901765}}}
 </pre></div>
 </div>
 </div>
@@ -1654,48 +1948,108 @@ Resumen:
   </thead>
   <tbody>
     <tr>
-      <th>Edad</th>
-      <td>6.0</td>
-      <td>32.666667</td>
-      <td>8.640988</td>
-      <td>23.00</td>
-      <td>26.000</td>
-      <td>31.50</td>
-      <td>38.5000</td>
+      <th>Age</th>
+      <td>48842.0</td>
+      <td>38.643585</td>
+      <td>13.710510</td>
+      <td>17.0</td>
+      <td>28.0</td>
+      <td>37.0</td>
+      <td>48.0</td>
+      <td>90.0</td>
+      <td>1.879781e+02</td>
+      <td>37.0</td>
+    </tr>
+    <tr>
+      <th>Fnlwgt</th>
+      <td>48842.0</td>
+      <td>189664.134597</td>
+      <td>105604.025423</td>
+      <td>12285.0</td>
+      <td>117550.5</td>
+      <td>178144.5</td>
+      <td>237642.0</td>
+      <td>1490400.0</td>
+      <td>1.115221e+10</td>
+      <td>178144.5</td>
+    </tr>
+    <tr>
+      <th>Capital-gain</th>
+      <td>48842.0</td>
+      <td>1079.067626</td>
+      <td>7452.019058</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>99999.0</td>
+      <td>5.553259e+07</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>Capital-loss</th>
+      <td>48842.0</td>
+      <td>87.502314</td>
+      <td>403.004552</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>4356.0</td>
+      <td>1.624127e+05</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>Hours-per-week</th>
+      <td>48842.0</td>
+      <td>40.422382</td>
+      <td>12.391444</td>
+      <td>1.0</td>
+      <td>40.0</td>
+      <td>40.0</td>
       <td>45.0</td>
-      <td>74.666667</td>
-      <td>31.50</td>
-    </tr>
-    <tr>
-      <th>Altura</th>
-      <td>6.0</td>
-      <td>1.716667</td>
-      <td>0.053166</td>
-      <td>1.65</td>
-      <td>1.685</td>
-      <td>1.71</td>
-      <td>1.7425</td>
-      <td>1.8</td>
-      <td>0.002827</td>
-      <td>1.71</td>
-    </tr>
-    <tr>
-      <th>Peso</th>
-      <td>6.0</td>
-      <td>72.500000</td>
-      <td>8.893818</td>
-      <td>60.00</td>
-      <td>68.500</td>
-      <td>71.00</td>
-      <td>78.0000</td>
-      <td>85.0</td>
-      <td>79.100000</td>
-      <td>71.00</td>
+      <td>99.0</td>
+      <td>1.535479e+02</td>
+      <td>40.0</td>
     </tr>
   </tbody>
 </table>
 </div></div></div>
 </div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graficar_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/f48dd9ce70eeedee31123cb19c69073814e69a57d3da8d393121dabd893ab3ca.png" src="_images/f48dd9ce70eeedee31123cb19c69073814e69a57d3da8d393121dabd893ab3ca.png" />
+<img alt="_images/4a30fed0ff0a075a359e7f641c66365c0c17fd62bf7f7095d7c23a605c74626c.png" src="_images/4a30fed0ff0a075a359e7f641c66365c0c17fd62bf7f7095d7c23a605c74626c.png" />
+<img alt="_images/6b0bb13a71d6824f9156bd9984dd5240e24fc7ac38488233c3b9ba06fc16d8e8.png" src="_images/6b0bb13a71d6824f9156bd9984dd5240e24fc7ac38488233c3b9ba06fc16d8e8.png" />
+<img alt="_images/f161abb0bc869ff56e535c625baab24db5f030742e95b0ad3c3a9cca1ffa9c55.png" src="_images/f161abb0bc869ff56e535c625baab24db5f030742e95b0ad3c3a9cca1ffa9c55.png" />
+<img alt="_images/2098e22f73d0478a7a777d1d9756373adf07c00ba87162d23ffee7385fd56a9f.png" src="_images/2098e22f73d0478a7a777d1d9756373adf07c00ba87162d23ffee7385fd56a9f.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">contar_na_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Age               0
+Fnlwgt            0
+Capital-gain      0
+Capital-loss      0
+Hours-per-week    0
+dtype: int64
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusiones-del-exploratorio-de-datos">
+<h3>Conclusiones del exploratorio de datos<a class="headerlink" href="#conclusiones-del-exploratorio-de-datos" title="Link to this heading">#</a></h3>
 </section>
 </section>
 </section>
@@ -1769,6 +2123,7 @@ Resumen:
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-para-variables-numericas">Analisis exploratorio para variables numericas</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos">Conclusiones del exploratorio de datos</a></li>
 </ul>
 </li>
 </ul>
