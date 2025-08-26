@@ -384,14 +384,16 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos">Cargado de datos:</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Analisis exploratorio de datos</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-de-datos-para-variables-categoricas">Analisis exploratorio de datos para variables categoricas</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-de-datos-para-variables-categoricas">Analisis exploratorio de datos para variables categoricas</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-para-variables-numericas">Analisis exploratorio para variables numericas</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos">Conclusiones del exploratorio de datos</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos-inicial-univariado">Conclusiones del exploratorio de datos inicial/univariado</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preprocesamiento-de-datos">Preprocesamiento de datos</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-bivariado">analisis bivariado</a></li>
 </ul>
             </nav>
         </div>
@@ -1740,10 +1742,8 @@ Resumen:
 </div>
 </div>
 </div>
-</section>
-</section>
 <section id="grafica-para-las-categoricas">
-<h2>Grafica para las categoricas<a class="headerlink" href="#grafica-para-las-categoricas" title="Link to this heading">#</a></h2>
+<h4>Grafica para las categoricas<a class="headerlink" href="#grafica-para-las-categoricas" title="Link to this heading">#</a></h4>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">GraficarCategoricas</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="s2">&quot;barra&quot;</span><span class="p">)</span>
@@ -1907,6 +1907,8 @@ Resumen:
 </div>
 </div>
 </div>
+</section>
+</section>
 <section id="analisis-exploratorio-para-variables-numericas">
 <h3>Analisis exploratorio para variables numericas<a class="headerlink" href="#analisis-exploratorio-para-variables-numericas" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
@@ -2048,9 +2050,19 @@ dtype: int64
 </div>
 </div>
 </section>
-<section id="conclusiones-del-exploratorio-de-datos">
-<h3>Conclusiones del exploratorio de datos<a class="headerlink" href="#conclusiones-del-exploratorio-de-datos" title="Link to this heading">#</a></h3>
+<section id="conclusiones-del-exploratorio-de-datos-inicial-univariado">
+<h3>Conclusiones del exploratorio de datos inicial/univariado<a class="headerlink" href="#conclusiones-del-exploratorio-de-datos-inicial-univariado" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Se observa la presencia de datos atipicos para las variables numericas y presencia de datos Nan para las variables categoricas que deben ser tratados</p></li>
+</ul>
 </section>
+</section>
+<section id="preprocesamiento-de-datos">
+<h2>Preprocesamiento de datos<a class="headerlink" href="#preprocesamiento-de-datos" title="Link to this heading">#</a></h2>
+</section>
+<section id="analisis-bivariado">
+<h2>analisis bivariado<a class="headerlink" href="#analisis-bivariado" title="Link to this heading">#</a></h2>
+<p>still working</p>
 </section>
 </section>
 
@@ -2118,14 +2130,16 @@ dtype: int64
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos">Cargado de datos:</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Analisis exploratorio de datos</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-de-datos-para-variables-categoricas">Analisis exploratorio de datos para variables categoricas</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-de-datos-para-variables-categoricas">Analisis exploratorio de datos para variables categoricas</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-para-variables-numericas">Analisis exploratorio para variables numericas</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos">Conclusiones del exploratorio de datos</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos-inicial-univariado">Conclusiones del exploratorio de datos inicial/univariado</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preprocesamiento-de-datos">Preprocesamiento de datos</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-bivariado">analisis bivariado</a></li>
 </ul>
   </nav></div>
 
