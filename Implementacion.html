@@ -382,7 +382,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#atributos-incluidos">Atributos incluidos</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos">Cargado de datos:</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos-y-exploraciones-iniciales">Cargado de datos y exploraciones iniciales:</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Analisis exploratorio de datos</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-de-datos-para-variables-categoricas">Analisis exploratorio de datos para variables categoricas</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a></li>
@@ -392,8 +392,9 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos-inicial-univariado">Conclusiones del exploratorio de datos inicial/univariado</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-mediante-pruebas-analiticas">Analisis mediante pruebas analiticas</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-de-outliers">Analisis de outliers</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preprocesamiento-de-datos">Preprocesamiento de datos</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-bivariado">analisis bivariado</a></li>
 </ul>
             </nav>
         </div>
@@ -413,6 +414,8 @@ document.write(`
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">shapiro</span><span class="p">,</span> <span class="n">normaltest</span><span class="p">,</span> <span class="n">kstest</span>
 </pre></div>
 </div>
 </div>
@@ -447,23 +450,30 @@ document.write(`
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">analizar_categoricas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">resultados</span> <span class="o">=</span> <span class="p">{}</span>
-    
+    <span class="n">resultados</span> <span class="o">=</span> <span class="p">[]</span>
+
     <span class="c1"># Detectar variables categóricas (object, category o booleanas)</span>
     <span class="n">categoricas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;bool&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
-    
+
     <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">categoricas</span><span class="p">:</span>
-        <span class="c1"># Conteo por categoría</span>
         <span class="n">conteo</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">proporcion</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">(</span><span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        
-        <span class="n">resultados</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">nulos</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="c1"># Tomamos la categoría más frecuente</span>
+        <span class="n">categoria_moda</span> <span class="o">=</span> <span class="n">conteo</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">conteo</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">frecuencia_moda</span> <span class="o">=</span> <span class="n">conteo</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">conteo</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">resultados</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;variable&quot;</span><span class="p">:</span> <span class="n">col</span><span class="p">,</span>
             <span class="s2">&quot;cantidad_categorias&quot;</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">(</span><span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
-            <span class="s2">&quot;conteo&quot;</span><span class="p">:</span> <span class="n">conteo</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
-            <span class="s2">&quot;proporcion&quot;</span><span class="p">:</span> <span class="n">proporcion</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-        <span class="p">}</span>
+            <span class="s2">&quot;categoria_mas_frecuente&quot;</span><span class="p">:</span> <span class="n">categoria_moda</span><span class="p">,</span>
+            <span class="s2">&quot;frecuencia_mas_frecuente&quot;</span><span class="p">:</span> <span class="n">frecuencia_moda</span><span class="p">,</span>
+            <span class="s2">&quot;porcentaje_mas_frecuente&quot;</span><span class="p">:</span> <span class="n">proporcion</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">conteo</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;nulos&quot;</span><span class="p">:</span> <span class="n">nulos</span>
+        <span class="p">})</span>
     
-    <span class="k">return</span> <span class="n">resultados</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">resultados</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;cantidad_categorias&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -471,16 +481,6 @@ document.write(`
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">GraficarCategoricas</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">tipo</span><span class="o">=</span><span class="s2">&quot;barra&quot;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Detecta variables categóricas en el DataFrame y genera gráficos.</span>
-<span class="sd">    </span>
-<span class="sd">    Parámetros:</span>
-<span class="sd">    -----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame con los datos.</span>
-<span class="sd">    tipo : str</span>
-<span class="sd">        Tipo de gráfico: &quot;barra&quot; o &quot;pastel&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Detectar variables categóricas</span>
     <span class="n">categoricas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;bool&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
     <span class="n">resultados</span> <span class="o">=</span> <span class="p">{}</span>
@@ -522,19 +522,6 @@ document.write(`
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">resumen_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Devuelve un resumen estadístico de las variables numéricas en el DataFrame.</span>
-<span class="sd">    </span>
-<span class="sd">    Parámetros:</span>
-<span class="sd">    -----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame con los datos.</span>
-<span class="sd">    </span>
-<span class="sd">    Retorna:</span>
-<span class="sd">    --------</span>
-<span class="sd">    pd.DataFrame</span>
-<span class="sd">        Resumen con estadísticas descriptivas de las variables numéricas.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Seleccionar columnas numéricas</span>
     <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
     
@@ -555,14 +542,7 @@ document.write(`
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">graficar_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Detecta variables numéricas en el DataFrame y genera gráficos.</span>
-<span class="sd">    </span>
-<span class="sd">    Parámetros:</span>
-<span class="sd">    -----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame con los datos.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="c1"># Detectar variables numéricas</span>
     <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
 
@@ -597,19 +577,7 @@ document.write(`
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">contar_na_numericas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Cuenta la cantidad de valores NA en las variables numéricas del DataFrame.</span>
-<span class="sd">    </span>
-<span class="sd">    Parámetros:</span>
-<span class="sd">    -----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame con los datos.</span>
-<span class="sd">    </span>
-<span class="sd">    Retorna:</span>
-<span class="sd">    --------</span>
-<span class="sd">    pd.Series</span>
-<span class="sd">        Serie con el conteo de NA por variable numérica.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="c1"># Detectar variables numéricas</span>
     <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
 
@@ -621,6 +589,99 @@ document.write(`
     <span class="n">na_counts</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">numericas</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">na_counts</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">detectar_outliers</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">resultados</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Detectar variables numéricas</span>
+    <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">numericas</span><span class="p">:</span>
+        <span class="n">serie</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Cuartiles</span>
+        <span class="n">q1</span> <span class="o">=</span> <span class="n">serie</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="n">q3</span> <span class="o">=</span> <span class="n">serie</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="mf">0.75</span><span class="p">)</span>
+        <span class="n">iqr</span> <span class="o">=</span> <span class="n">q3</span> <span class="o">-</span> <span class="n">q1</span>
+
+        <span class="c1"># Límites para outliers</span>
+        <span class="n">lim_inf</span> <span class="o">=</span> <span class="n">q1</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">iqr</span>
+        <span class="n">lim_sup</span> <span class="o">=</span> <span class="n">q3</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">iqr</span>
+
+        <span class="c1"># Detección</span>
+        <span class="n">outliers</span> <span class="o">=</span> <span class="p">((</span><span class="n">serie</span> <span class="o">&lt;</span> <span class="n">lim_inf</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">serie</span> <span class="o">&gt;</span> <span class="n">lim_sup</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span>
+
+        <span class="n">resultados</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;variable&quot;</span><span class="p">:</span> <span class="n">col</span><span class="p">,</span>
+            <span class="s2">&quot;n_muestras&quot;</span><span class="p">:</span> <span class="n">total</span><span class="p">,</span>
+            <span class="s2">&quot;outliers&quot;</span><span class="p">:</span> <span class="n">outliers</span><span class="p">,</span>
+            <span class="s2">&quot;proporcion_outliers&quot;</span><span class="p">:</span> <span class="n">outliers</span> <span class="o">/</span> <span class="n">total</span> <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="p">})</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">resultados</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;proporcion_outliers&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prueba_normalidad</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+    <span class="n">resultados</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Detectar variables numéricas</span>
+    <span class="n">numericas</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">numericas</span><span class="p">:</span>
+        <span class="n">serie</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>  <span class="c1"># muy pocas muestras → no confiable</span>
+            <span class="n">resultados</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;variable&quot;</span><span class="p">:</span> <span class="n">col</span><span class="p">,</span>
+                <span class="s2">&quot;n_muestras&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">serie</span><span class="p">),</span>
+                <span class="s2">&quot;shapiro_p&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+                <span class="s2">&quot;dagostino_p&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+                <span class="s2">&quot;ks_p&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
+                <span class="s2">&quot;es_normal (alpha=0.05)&quot;</span><span class="p">:</span> <span class="s2">&quot;Muestra insuficiente&quot;</span>
+            <span class="p">})</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Shapiro-Wilk (solo si n &lt;= 5000, más grande no recomendado)</span>
+        <span class="n">stat_shapiro</span><span class="p">,</span> <span class="n">p_shapiro</span> <span class="o">=</span> <span class="n">shapiro</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">5000</span> <span class="k">else</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+        <span class="c1"># D’Agostino y Pearson</span>
+        <span class="n">stat_dagostino</span><span class="p">,</span> <span class="n">p_dagostino</span> <span class="o">=</span> <span class="n">normaltest</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span>
+
+        <span class="c1"># Kolmogorov-Smirnov contra normal estándar</span>
+        <span class="n">stat_ks</span><span class="p">,</span> <span class="n">p_ks</span> <span class="o">=</span> <span class="n">kstest</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">serie</span> <span class="o">-</span> <span class="n">serie</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">serie</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;norm&#39;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Veredicto final</span>
+        <span class="n">es_normal</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">p_shapiro</span><span class="p">)</span> <span class="ow">or</span> <span class="n">p_shapiro</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="p">(</span><span class="n">p_dagostino</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="p">(</span><span class="n">p_ks</span> <span class="o">&gt;</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">resultados</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">&quot;variable&quot;</span><span class="p">:</span> <span class="n">col</span><span class="p">,</span>
+            <span class="s2">&quot;n_muestras&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">serie</span><span class="p">),</span>
+            <span class="s2">&quot;shapiro_p&quot;</span><span class="p">:</span> <span class="n">p_shapiro</span><span class="p">,</span>
+            <span class="s2">&quot;dagostino_p&quot;</span><span class="p">:</span> <span class="n">p_dagostino</span><span class="p">,</span>
+            <span class="s2">&quot;ks_p&quot;</span><span class="p">:</span> <span class="n">p_ks</span><span class="p">,</span>
+            <span class="s2">&quot;es_normal (alpha=0.05)&quot;</span><span class="p">:</span> <span class="n">es_normal</span>
+        <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">resultados</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;es_normal (alpha=0.05)&quot;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -658,8 +719,8 @@ document.write(`
 </ul>
 </section>
 </section>
-<section id="cargado-de-datos">
-<h2>Cargado de datos:<a class="headerlink" href="#cargado-de-datos" title="Link to this heading">#</a></h2>
+<section id="cargado-de-datos-y-exploraciones-iniciales">
+<h2>Cargado de datos y exploraciones iniciales:<a class="headerlink" href="#cargado-de-datos-y-exploraciones-iniciales" title="Link to this heading">#</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df1</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;adult.data&quot;</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">na_values</span><span class="o">=</span><span class="s2">&quot; ?&quot;</span><span class="p">)</span>
@@ -1489,258 +1550,126 @@ Resumen:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;Workclass&#39;: {&#39;cantidad_categorias&#39;: 9,
-  &#39;conteo&#39;: {&#39; Private&#39;: 33906,
-   &#39; Self-emp-not-inc&#39;: 3862,
-   &#39; Local-gov&#39;: 3136,
-   nan: 2799,
-   &#39; State-gov&#39;: 1981,
-   &#39; Self-emp-inc&#39;: 1695,
-   &#39; Federal-gov&#39;: 1432,
-   &#39; Without-pay&#39;: 21,
-   &#39; Never-worked&#39;: 10},
-  &#39;proporcion&#39;: {&#39; Private&#39;: 0.6941976168052086,
-   &#39; Self-emp-not-inc&#39;: 0.07907129110192047,
-   &#39; Local-gov&#39;: 0.06420703492895459,
-   nan: 0.05730723557593874,
-   &#39; State-gov&#39;: 0.04055935465378158,
-   &#39; Self-emp-inc&#39;: 0.034703738585643504,
-   &#39; Federal-gov&#39;: 0.029319028704803244,
-   &#39; Without-pay&#39;: 0.0004299578231849638,
-   &#39; Never-worked&#39;: 0.00020474182056426845}},
- &#39;Education&#39;: {&#39;cantidad_categorias&#39;: 16,
-  &#39;conteo&#39;: {&#39; HS-grad&#39;: 15784,
-   &#39; Some-college&#39;: 10878,
-   &#39; Bachelors&#39;: 8025,
-   &#39; Masters&#39;: 2657,
-   &#39; Assoc-voc&#39;: 2061,
-   &#39; 11th&#39;: 1812,
-   &#39; Assoc-acdm&#39;: 1601,
-   &#39; 10th&#39;: 1389,
-   &#39; 7th-8th&#39;: 955,
-   &#39; Prof-school&#39;: 834,
-   &#39; 9th&#39;: 756,
-   &#39; 12th&#39;: 657,
-   &#39; Doctorate&#39;: 594,
-   &#39; 5th-6th&#39;: 509,
-   &#39; 1st-4th&#39;: 247,
-   &#39; Preschool&#39;: 83},
-  &#39;proporcion&#39;: {&#39; HS-grad&#39;: 0.32316448957864136,
-   &#39; Some-college&#39;: 0.22271815240981122,
-   &#39; Bachelors&#39;: 0.16430531100282544,
-   &#39; Masters&#39;: 0.05439990172392613,
-   &#39; Assoc-voc&#39;: 0.04219728921829573,
-   &#39; 11th&#39;: 0.03709921788624544,
-   &#39; Assoc-acdm&#39;: 0.03277916547233938,
-   &#39; 10th&#39;: 0.02843863887637689,
-   &#39; 7th-8th&#39;: 0.01955284386388764,
-   &#39; Prof-school&#39;: 0.01707546783505999,
-   &#39; 9th&#39;: 0.015478481634658696,
-   &#39; 12th&#39;: 0.013451537611072437,
-   &#39; Doctorate&#39;: 0.012161664141517547,
-   &#39; 5th-6th&#39;: 0.010421358666721264,
-   &#39; 1st-4th&#39;: 0.0050571229679374306,
-   &#39; Preschool&#39;: 0.0016993571106834282}},
- &#39;Education-num&#39;: {&#39;cantidad_categorias&#39;: 16,
-  &#39;conteo&#39;: {9: 15784,
-   10: 10878,
-   13: 8025,
-   14: 2657,
-   11: 2061,
-   7: 1812,
-   12: 1601,
-   6: 1389,
-   4: 955,
-   15: 834,
-   5: 756,
-   8: 657,
-   16: 594,
-   3: 509,
-   2: 247,
-   1: 83},
-  &#39;proporcion&#39;: {9: 0.32316448957864136,
-   10: 0.22271815240981122,
-   13: 0.16430531100282544,
-   14: 0.05439990172392613,
-   11: 0.04219728921829573,
-   7: 0.03709921788624544,
-   12: 0.03277916547233938,
-   6: 0.02843863887637689,
-   4: 0.01955284386388764,
-   15: 0.01707546783505999,
-   5: 0.015478481634658696,
-   8: 0.013451537611072437,
-   16: 0.012161664141517547,
-   3: 0.010421358666721264,
-   2: 0.0050571229679374306,
-   1: 0.0016993571106834282}},
- &#39;Marital-status&#39;: {&#39;cantidad_categorias&#39;: 7,
-  &#39;conteo&#39;: {&#39; Married-civ-spouse&#39;: 22379,
-   &#39; Never-married&#39;: 16117,
-   &#39; Divorced&#39;: 6633,
-   &#39; Separated&#39;: 1530,
-   &#39; Widowed&#39;: 1518,
-   &#39; Married-spouse-absent&#39;: 628,
-   &#39; Married-AF-spouse&#39;: 37},
-  &#39;proporcion&#39;: {&#39; Married-civ-spouse&#39;: 0.45819172024077637,
-   &#39; Never-married&#39;: 0.32998239220343145,
-   &#39; Divorced&#39;: 0.13580524958027926,
-   &#39; Separated&#39;: 0.031325498546333076,
-   &#39; Widowed&#39;: 0.031079808361655952,
-   &#39; Married-spouse-absent&#39;: 0.012857786331436059,
-   &#39; Married-AF-spouse&#39;: 0.0007575447360877933}},
- &#39;Occupation&#39;: {&#39;cantidad_categorias&#39;: 15,
-  &#39;conteo&#39;: {&#39; Prof-specialty&#39;: 6172,
-   &#39; Craft-repair&#39;: 6112,
-   &#39; Exec-managerial&#39;: 6086,
-   &#39; Adm-clerical&#39;: 5611,
-   &#39; Sales&#39;: 5504,
-   &#39; Other-service&#39;: 4923,
-   &#39; Machine-op-inspct&#39;: 3022,
-   nan: 2809,
-   &#39; Transport-moving&#39;: 2355,
-   &#39; Handlers-cleaners&#39;: 2072,
-   &#39; Farming-fishing&#39;: 1490,
-   &#39; Tech-support&#39;: 1446,
-   &#39; Protective-serv&#39;: 983,
-   &#39; Priv-house-serv&#39;: 242,
-   &#39; Armed-Forces&#39;: 15},
-  &#39;proporcion&#39;: {&#39; Prof-specialty&#39;: 0.1263666516522665,
-   &#39; Craft-repair&#39;: 0.12513820072888088,
-   &#39; Exec-managerial&#39;: 0.12460587199541379,
-   &#39; Adm-clerical&#39;: 0.11488063551861104,
-   &#39; Sales&#39;: 0.11268989803857336,
-   &#39; Other-service&#39;: 0.10079439826378936,
-   &#39; Machine-op-inspct&#39;: 0.06187297817452193,
-   nan: 0.05751197739650301,
-   &#39; Transport-moving&#39;: 0.04821669874288522,
-   &#39; Handlers-cleaners&#39;: 0.04242250522091642,
-   &#39; Farming-fishing&#39;: 0.030506531264076,
-   &#39; Tech-support&#39;: 0.029605667253593218,
-   &#39; Protective-serv&#39;: 0.02012612096146759,
-   &#39; Priv-house-serv&#39;: 0.004954752057655297,
-   &#39; Armed-Forces&#39;: 0.00030711273084640267}},
- &#39;Relationship&#39;: {&#39;cantidad_categorias&#39;: 6,
-  &#39;conteo&#39;: {&#39; Husband&#39;: 19716,
-   &#39; Not-in-family&#39;: 12583,
-   &#39; Own-child&#39;: 7581,
-   &#39; Unmarried&#39;: 5125,
-   &#39; Wife&#39;: 2331,
-   &#39; Other-relative&#39;: 1506},
-  &#39;proporcion&#39;: {&#39; Husband&#39;: 0.4036689734245117,
-   &#39; Not-in-family&#39;: 0.257626632816019,
-   &#39; Own-child&#39;: 0.15521477416977192,
-   &#39; Unmarried&#39;: 0.10493018303918758,
-   &#39; Wife&#39;: 0.04772531837353098,
-   &#39; Other-relative&#39;: 0.030834118176978828}},
- &#39;Race&#39;: {&#39;cantidad_categorias&#39;: 5,
-  &#39;conteo&#39;: {&#39; White&#39;: 41762,
-   &#39; Black&#39;: 4685,
-   &#39; Asian-Pac-Islander&#39;: 1519,
-   &#39; Amer-Indian-Eskimo&#39;: 470,
-   &#39; Other&#39;: 406},
-  &#39;proporcion&#39;: {&#39; White&#39;: 0.855042791040498,
-   &#39; Black&#39;: 0.09592154293435977,
-   &#39; Asian-Pac-Islander&#39;: 0.031100282543712377,
-   &#39; Amer-Indian-Eskimo&#39;: 0.009622865566520618,
-   &#39; Other&#39;: 0.0083125179149093}},
- &#39;Sex&#39;: {&#39;cantidad_categorias&#39;: 2,
-  &#39;conteo&#39;: {&#39; Male&#39;: 32650, &#39; Female&#39;: 16192},
-  &#39;proporcion&#39;: {&#39; Male&#39;: 0.6684820441423365, &#39; Female&#39;: 0.33151795585766347}},
- &#39;Native-country&#39;: {&#39;cantidad_categorias&#39;: 42,
-  &#39;conteo&#39;: {&#39; United-States&#39;: 43832,
-   &#39; Mexico&#39;: 951,
-   nan: 857,
-   &#39; Philippines&#39;: 295,
-   &#39; Germany&#39;: 206,
-   &#39; Puerto-Rico&#39;: 184,
-   &#39; Canada&#39;: 182,
-   &#39; El-Salvador&#39;: 155,
-   &#39; India&#39;: 151,
-   &#39; Cuba&#39;: 138,
-   &#39; England&#39;: 127,
-   &#39; China&#39;: 122,
-   &#39; South&#39;: 115,
-   &#39; Jamaica&#39;: 106,
-   &#39; Italy&#39;: 105,
-   &#39; Dominican-Republic&#39;: 103,
-   &#39; Japan&#39;: 92,
-   &#39; Guatemala&#39;: 88,
-   &#39; Poland&#39;: 87,
-   &#39; Vietnam&#39;: 86,
-   &#39; Columbia&#39;: 85,
-   &#39; Haiti&#39;: 75,
-   &#39; Portugal&#39;: 67,
-   &#39; Taiwan&#39;: 65,
-   &#39; Iran&#39;: 59,
-   &#39; Greece&#39;: 49,
-   &#39; Nicaragua&#39;: 49,
-   &#39; Peru&#39;: 46,
-   &#39; Ecuador&#39;: 45,
-   &#39; France&#39;: 38,
-   &#39; Ireland&#39;: 37,
-   &#39; Hong&#39;: 30,
-   &#39; Thailand&#39;: 30,
-   &#39; Cambodia&#39;: 28,
-   &#39; Trinadad&amp;Tobago&#39;: 27,
-   &#39; Outlying-US(Guam-USVI-etc)&#39;: 23,
-   &#39; Yugoslavia&#39;: 23,
-   &#39; Laos&#39;: 23,
-   &#39; Scotland&#39;: 21,
-   &#39; Honduras&#39;: 20,
-   &#39; Hungary&#39;: 19,
-   &#39; Holand-Netherlands&#39;: 1},
-  &#39;proporcion&#39;: {&#39; United-States&#39;: 0.8974243478973015,
-   &#39; Mexico&#39;: 0.019470947135661932,
-   nan: 0.017546374022357807,
-   &#39; Philippines&#39;: 0.006039883706645919,
-   &#39; Germany&#39;: 0.00421768150362393,
-   &#39; Puerto-Rico&#39;: 0.0037672494983825395,
-   &#39; Canada&#39;: 0.003726301134269686,
-   &#39; El-Salvador&#39;: 0.0031734982187461612,
-   &#39; India&#39;: 0.0030916014905204535,
-   &#39; Cuba&#39;: 0.002825437123786905,
-   &#39; England&#39;: 0.0026002211211662092,
-   &#39; China&#39;: 0.002497850210884075,
-   &#39; South&#39;: 0.0023545309364890873,
-   &#39; Jamaica&#39;: 0.0021702632979812455,
-   &#39; Italy&#39;: 0.002149789115924819,
-   &#39; Dominican-Republic&#39;: 0.002108840751811965,
-   &#39; Japan&#39;: 0.0018836247491912698,
-   &#39; Guatemala&#39;: 0.0018017280209655625,
-   &#39; Poland&#39;: 0.0017812538389091355,
-   &#39; Vietnam&#39;: 0.0017607796568527088,
-   &#39; Columbia&#39;: 0.0017403054747962819,
-   &#39; Haiti&#39;: 0.0015355636542320134,
-   &#39; Portugal&#39;: 0.0013717701977805986,
-   &#39; Taiwan&#39;: 0.001330821833667745,
-   &#39; Iran&#39;: 0.001207976741329184,
-   &#39; Greece&#39;: 0.0010032349207649155,
-   &#39; Nicaragua&#39;: 0.0010032349207649155,
-   &#39; Peru&#39;: 0.0009418123745956349,
-   &#39; Ecuador&#39;: 0.0009213381925392081,
-   &#39; France&#39;: 0.0007780189181442202,
-   &#39; Ireland&#39;: 0.0007575447360877933,
-   &#39; Hong&#39;: 0.0006142254616928053,
-   &#39; Thailand&#39;: 0.0006142254616928053,
-   &#39; Cambodia&#39;: 0.0005732770975799517,
-   &#39; Trinadad&amp;Tobago&#39;: 0.0005528029155235249,
-   &#39; Outlying-US(Guam-USVI-etc)&#39;: 0.00047090618729781744,
-   &#39; Yugoslavia&#39;: 0.00047090618729781744,
-   &#39; Laos&#39;: 0.00047090618729781744,
-   &#39; Scotland&#39;: 0.0004299578231849638,
-   &#39; Honduras&#39;: 0.0004094836411285369,
-   &#39; Hungary&#39;: 0.0003890094590721101,
-   &#39; Holand-Netherlands&#39;: 2.0474182056426847e-05}},
- &#39;Income&#39;: {&#39;cantidad_categorias&#39;: 4,
-  &#39;conteo&#39;: {&#39; &lt;=50K&#39;: 24720, &#39; &lt;=50K.&#39;: 12435, &#39; &gt;50K&#39;: 7841, &#39; &gt;50K.&#39;: 3846},
-  &#39;proporcion&#39;: {&#39; &lt;=50K&#39;: 0.5061217804348717,
-   &#39; &lt;=50K.&#39;: 0.25459645387166785,
-   &#39; &gt;50K&#39;: 0.16053806150444289,
-   &#39; &gt;50K.&#39;: 0.07874370418901765}}}
-</pre></div>
-</div>
-</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>variable</th>
+      <th>cantidad_categorias</th>
+      <th>categoria_mas_frecuente</th>
+      <th>frecuencia_mas_frecuente</th>
+      <th>porcentaje_mas_frecuente</th>
+      <th>nulos</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>8</th>
+      <td>Native-country</td>
+      <td>42</td>
+      <td>United-States</td>
+      <td>43832</td>
+      <td>0.897424</td>
+      <td>857</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Education</td>
+      <td>16</td>
+      <td>HS-grad</td>
+      <td>15784</td>
+      <td>0.323164</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Education-num</td>
+      <td>16</td>
+      <td>9</td>
+      <td>15784</td>
+      <td>0.323164</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Occupation</td>
+      <td>15</td>
+      <td>Prof-specialty</td>
+      <td>6172</td>
+      <td>0.126367</td>
+      <td>2809</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>Workclass</td>
+      <td>9</td>
+      <td>Private</td>
+      <td>33906</td>
+      <td>0.694198</td>
+      <td>2799</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Marital-status</td>
+      <td>7</td>
+      <td>Married-civ-spouse</td>
+      <td>22379</td>
+      <td>0.458192</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Relationship</td>
+      <td>6</td>
+      <td>Husband</td>
+      <td>19716</td>
+      <td>0.403669</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Race</td>
+      <td>5</td>
+      <td>White</td>
+      <td>41762</td>
+      <td>0.855043</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Income</td>
+      <td>4</td>
+      <td>&lt;=50K</td>
+      <td>24720</td>
+      <td>0.506122</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Sex</td>
+      <td>2</td>
+      <td>Male</td>
+      <td>32650</td>
+      <td>0.668482</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
 </div>
 <section id="grafica-para-las-categoricas">
 <h4>Grafica para las categoricas<a class="headerlink" href="#grafica-para-las-categoricas" title="Link to this heading">#</a></h4>
@@ -2057,12 +1986,169 @@ dtype: int64
 </ul>
 </section>
 </section>
+<section id="analisis-mediante-pruebas-analiticas">
+<h2>Analisis mediante pruebas analiticas<a class="headerlink" href="#analisis-mediante-pruebas-analiticas" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prueba_normalidad</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>variable</th>
+      <th>n_muestras</th>
+      <th>shapiro_p</th>
+      <th>dagostino_p</th>
+      <th>ks_p</th>
+      <th>es_normal (alpha=0.05)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Age</td>
+      <td>48842</td>
+      <td>NaN</td>
+      <td>0.0</td>
+      <td>8.040691e-170</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Fnlwgt</td>
+      <td>48842</td>
+      <td>NaN</td>
+      <td>0.0</td>
+      <td>0.000000e+00</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Capital-gain</td>
+      <td>48842</td>
+      <td>NaN</td>
+      <td>0.0</td>
+      <td>0.000000e+00</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Capital-loss</td>
+      <td>48842</td>
+      <td>NaN</td>
+      <td>0.0</td>
+      <td>0.000000e+00</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Hours-per-week</td>
+      <td>48842</td>
+      <td>NaN</td>
+      <td>0.0</td>
+      <td>0.000000e+00</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+<section id="analisis-de-outliers">
+<h2>Analisis de outliers<a class="headerlink" href="#analisis-de-outliers" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">detectar_outliers</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>variable</th>
+      <th>n_muestras</th>
+      <th>outliers</th>
+      <th>proporcion_outliers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>4</th>
+      <td>Hours-per-week</td>
+      <td>48842</td>
+      <td>13496</td>
+      <td>0.276320</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Capital-gain</td>
+      <td>48842</td>
+      <td>4035</td>
+      <td>0.082613</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Capital-loss</td>
+      <td>48842</td>
+      <td>2282</td>
+      <td>0.046722</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Fnlwgt</td>
+      <td>48842</td>
+      <td>1453</td>
+      <td>0.029749</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>Age</td>
+      <td>48842</td>
+      <td>216</td>
+      <td>0.004422</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>en todas las categorias salvo hours-per-week se ve una baja cantidad de outliers, por lo que realizaremos metodos de limpieza principalmente sencillos salvo para dicha variable</p>
+</section>
 <section id="preprocesamiento-de-datos">
 <h2>Preprocesamiento de datos<a class="headerlink" href="#preprocesamiento-de-datos" title="Link to this heading">#</a></h2>
-</section>
-<section id="analisis-bivariado">
-<h2>analisis bivariado<a class="headerlink" href="#analisis-bivariado" title="Link to this heading">#</a></h2>
-<p>still working</p>
 </section>
 </section>
 
@@ -2128,7 +2214,7 @@ dtype: int64
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#atributos-incluidos">Atributos incluidos</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos">Cargado de datos:</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cargado-de-datos-y-exploraciones-iniciales">Cargado de datos y exploraciones iniciales:</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Analisis exploratorio de datos</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-exploratorio-de-datos-para-variables-categoricas">Analisis exploratorio de datos para variables categoricas</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#grafica-para-las-categoricas">Grafica para las categoricas</a></li>
@@ -2138,8 +2224,9 @@ dtype: int64
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusiones-del-exploratorio-de-datos-inicial-univariado">Conclusiones del exploratorio de datos inicial/univariado</a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-mediante-pruebas-analiticas">Analisis mediante pruebas analiticas</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-de-outliers">Analisis de outliers</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preprocesamiento-de-datos">Preprocesamiento de datos</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analisis-bivariado">analisis bivariado</a></li>
 </ul>
   </nav></div>
 
